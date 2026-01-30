@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistem Point of Sale (POS) Tiketing Modern">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Post Tiketing | Modern POS</title>
+
+    <!-- Fonts: Outfit (Display) & Inter (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons: Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="side-nav">
+            <div class="nav-brand-box">
+                <div class="nav-logo">
+                    <i class="ph-fill ph-ticket"></i>
+                </div>
+                <div class="nav-title">
+                    <h2>TixPoint</h2>
+                    <small>POS System</small>
+                </div>
+                <button id="sidebar-toggle" title="Toggle Menu">
+                    <i class="ph ph-list"></i>
+                </button>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-label">Main Menu</li>
+                <li class="nav-item active" id="nav-pos-btn" title="POS">
+                    <i class="ph ph-storefront"></i>
+                    <span>Kasir / POS</span>
+                </li>
+                <li class="nav-item" id="nav-stats-btn" title="Statistik">
+                    <i class="ph ph-chart-bar"></i>
+                    <span>Laporan & Statistik</span>
+                </li>
+                <li class="nav-item" id="nav-member-btn" title="Database Member">
+                    <i class="ph ph-users"></i>
+                    <span>Database Member</span>
+                </li>
+                <!-- Export Menu Removed from Sidebar -->
+
+                <li class="nav-label">Pengaturan</li>
+                <li class="nav-item" id="nav-theme-btn" title="Ganti Tema">
+                    <i class="ph ph-moon"></i>
+                    <span>Mode Gelap</span>
+                </li>
+            </ul>
+
+            <div class="nav-footer">
+                <li class="nav-item danger" id="nav-logout-btn" title="Keluar">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Keluar</span>
+                </li>
+            </div>
+        </nav>
+
+        <!-- Main Content: Ticket Catalog -->
+        <!-- Main Content: Ticket Catalog -->
+        <main class="catalog-section">
+            <!-- VIEW: POS / Kasir -->
+            <div id="view-pos">
+                <header class="top-bar simplified" style="display: flex; gap: 1rem; justify-content: space-between;">
+                    <div class="search-container" style="flex: 1;">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="search-input" placeholder="Cari tiket berdasarkan nama (Tekan F2)...">
+                    </div>
+                    <div class="digital-clock" id="digital-clock" style="text-align: right; min-width: 140px;">
+                        <div class="time"
+                            style="font-size: 1.25rem; font-weight: bold; font-variant-numeric: tabular-nums; color: var(--text-main);">
+                            00:00:00</div>
+                        <div class="date" style="font-size: 0.75rem; color: var(--text-muted);">Senin, 01 Jan</div>
+                    </div>
+                </header>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <button class="filter-btn active" data-category="all">Semua</button>
+                    <button class="filter-btn" data-category="reguler">Reguler</button>
+                    <button class="filter-btn" data-category="vip">VIP</button>
+                    <button class="filter-btn" data-category="paket">Paket Keluarga</button>
+                    <button class="filter-btn" data-category="makanan">Makanan</button>
+                    <button class="filter-btn" data-category="minuman">Minuman</button>
+                </div>
+
+                <!-- Tiket Grid -->
+                <div id="ticket-grid" class="ticket-grid">
+                    <!-- Tiket akan dirender via JS -->
+                    <div class="ticket-card skeleton"></div>
+                    <div class="ticket-card skeleton"></div>
+                    <div class="ticket-card skeleton"></div>
+                </div>
+            </div>
+
+            <!-- VIEW: Statistics (Hidden by default) -->
+            <div id="view-stats" class="hidden">
+                <header class="top-bar simplified"
+                    style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="ph-fill ph-chart-bar" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <h2 style="font-size: 1.5rem; margin: 0; color: var(--text-main);">Laporan & Statistik</h2>
+                    </div>
+                    <button id="action-export-btn" class="btn-primary"
+                        style="width: auto; padding: 0.5rem 1rem; display: flex; gap: 0.5rem; align-items: center;">
+                        <i class="ph ph-download-simple"></i> Download CSV
+                    </button>
+                </header>
+
+                <section class="quick-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Terjual Hari Ini</span>
+                        <h3 class="stat-value" id="stat-sold">0</h3>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Pendapatan</span>
+                        <h3 class="stat-value" id="stat-revenue">Rp 0</h3>
+                    </div>
+                    <!-- Chart Container -->
+                    <div class="chart-container"
+                        style="grid-column: span 2; background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); height: 350px;">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+
+
+        <!-- Sidebar: Cart & Checkout -->
+        <aside class="cart-section">
+            <div class="cart-header">
+                <div class="header-left">
+                    <button id="cart-toggle-btn" class="icon-text-btn" title="Tutup Keranjang">
+                        <i class="ph ph-caret-double-right"></i>
+                    </button>
+                    <h2 class="cart-title-text">Keranjang</h2>
+                </div>
+                <div class="cart-header-actions">
+                    <button id="member-btn" class="icon-btn-small" title="Member"><i class="ph ph-user"></i></button>
+                    <button id="clear-cart" class="text-btn danger" title="Hapus Semua"><i
+                            class="ph ph-trash"></i></button>
+                </div>
+            </div>
+
+            <!-- Mini Cart View (Visible when collapsed) -->
+            <div class="cart-mini-view">
+                <button id="cart-expand-btn" title="Buka Keranjang">
+                    <i class="ph ph-caret-double-left"></i>
+                </button>
+                <div class="mini-cart-info">
+                    <div class="icon-badge">
+                        <i class="ph ph-shopping-cart"></i>
+                        <span id="mini-cart-count">0</span>
+                    </div>
+                </div>
+                <div class="mini-cart-total-vertical">
+                    <span id="mini-cart-total">Rp 0</span>
+                </div>
+            </div>
+
+            <!-- Member Info Bar (Hidden by default) -->
+
+            <!-- Member Info Bar (Hidden by default) -->
+            <div id="member-info-bar" class="member-info-bar hidden">
+                <i class="ph-fill ph-crown"></i>
+                <div class="member-details">
+                    <span id="member-name">Nama Member</span>
+                    <small id="member-points">0 Poin</small>
+                </div>
+                <button id="remove-member" class="icon-btn-micro"><i class="ph ph-x"></i></button>
+            </div>
+
+            <div id="cart-items" class="cart-items">
+                <!-- Cart Items akan dirender disini -->
+                <div class="empty-state">
+                    <i class="ph ph-shopping-cart"></i>
+                    <p>Belum ada tiket dipilih</p>
+                </div>
+            </div>
+
+            <div class="cart-footer">
+                <div class="voucher-box">
+                    <input type="text" id="voucher-input" placeholder="Kode Diskon">
+                    <button id="apply-voucher" class="icon-btn-small"><i class="ph ph-check"></i></button>
+                </div>
+                <div class="bill-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">Rp 0</span>
+                </div>
+                <div class="bill-row discount-row hidden" id="discount-row">
+                    <span>Diskon</span>
+                    <span id="discount-amount" class="text-danger">-Rp 0</span>
+                </div>
+                <div class="bill-row">
+                    <span>Pajak (0%)</span>
+                    <span>Rp 0</span>
+                </div>
+                <div class="bill-row total">
+                    <span>Total</span>
+                    <span id="final-total">Rp 0</span>
+                </div>
+
+                <div class="payment-methods">
+                    <button class="pm-btn active" data-method="cash">
+                        <i class="ph ph-money"></i> Tunai
+                    </button>
+                    <button class="pm-btn" data-method="qris">
+                        <i class="ph ph-qr-code"></i> QRIS
+                    </button>
+                </div>
+
+                <button id="checkout-btn" class="checkout-btn" disabled>
+                    Bayar Sekarang
+                    <i class="ph ph-arrow-right"></i>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div id="payment-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pembayaran</h3>
+                <button class="close-modal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="amount-display">
+                    <small>Total Tagihan</small>
+                    <h2 id="modal-total">Rp 0</h2>
+                </div>
+                <div class="form-group">
+                    <label>Uang Diterima</label>
+                    <input type="number" id="cash-input" placeholder="Rp 0">
+                </div>
+                <div class="change-display">
+                    <span>Kembalian:</span>
+                    <span id="change-amount" class="highlight">Rp 0</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-pay" class="btn-primary full-width">Proses Transaksi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Modal -->
+    <div id="member-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pilih Pelanggan</h3>
+                <button class="close-modal-member"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-bar full-width-search">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="member-search" placeholder="Cari Nama / No HP...">
+                </div>
+                <div id="member-list" class="member-list">
+                    <!-- Member items rendered here -->
+                </div>
+
+                <div class="add-member-form">
+                    <h4>Tambah Baru</h4>
+                    <input type="text" id="new-member-name" placeholder="Nama Lengkap">
+                    <input type="tel" id="new-member-phone" placeholder="Nomor HP">
+                    <button id="add-member-btn" class="btn-secondary">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="ph-fill ph-ticket"></i>
+            </div>
+            <h2 id="auth-title">Masuk Petugas</h2>
+            <p class="subtitle">Sistem POS Tiketing</p>
+
+            <div class="form-group">
+                <input type="text" id="login-username" placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="Password">
+            </div>
+
+            <button id="login-submit-btn" class="btn-primary full-width">Masuk</button>
+
+            <div class="auth-switch">
+                <span id="auth-message">Belum punya akun?</span>
+                <button type="button" id="auth-toggle-link" class="link-btn">Daftar disini</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Receipt Container -->
+    <div id="printable-receipt">
+        <div class="receipt-header">
+            <h3>TixPoint</h3>
+            <p>Jl. Tiket Masa Depan No. 88</p>
+            <p>Jakarta Selatan</p>
+            <div class="receipt-divider"></div>
+        </div>
+
+        <div class="receipt-items" id="receipt-items-list">
+            <!-- Items injected by JS -->
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-summary">
+            <div class="summary-row"><span>Total:</span> <span id="rec-total">Rp 0</span></div>
+            <div class="summary-row"><span>Bayar:</span> <span id="rec-cash">Rp 0</span></div>
+            <div class="summary-row"><span>Kembali:</span> <span id="rec-change">Rp 0</span></div>
+        </div>
+
+        <div class="receipt-footer">
+            <p>Terima Kasih!</p>
+            <p id="rec-date">DD/MM/YYYY HH:mm</p>
+            <p id="rec-id">#TRX-0000</p>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
